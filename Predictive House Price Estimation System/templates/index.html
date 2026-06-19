@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HouseAI — Predictive Price Estimation</title>
+  <meta name="description" content="AI-powered real estate valuation. HistGradientBoosting + Ridge ensemble trained on 82K samples, R² = 0.92."/>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬡</text></svg>"/>
+</head>
+<body>
+
+<!-- ── Ambience ─────────────────────────────────────────────── -->
+<div class="bg-ambient" aria-hidden="true"></div>
+<div class="noise-overlay" aria-hidden="true"></div>
+<div id="scroll-progress"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════════════════ -->
+<header class="site-header">
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-mark">⬡</div>
+    <span class="nav-logo-name">HouseAI</span>
+  </a>
+
+  <nav class="nav-center" aria-label="Main navigation">
+    <button class="nav-link active" data-scroll="predictor-section">Predictor</button>
+    <button class="nav-link" data-scroll="about-section">Methodology</button>
+    <button class="nav-link" data-scroll="stack-section">Stack</button>
+  </nav>
+
+  <div class="nav-right">
+    <div class="status-badge">
+      <span class="status-dot"></span>
+      Model Live · R² <strong id="live-r2" style="margin-left:3px;">0.92</strong>
+    </div>
+    <a class="btn-sm-outline" href="/health" target="_blank" rel="noopener">
+      API Health ↗
+    </a>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════════════════ -->
+<main>
+<div class="page-wrap">
+  <section class="hero reveal" id="home-section">
+
+    <div class="hero-eyebrow">
+      <span class="ey-icon">✦</span>
+      Machine Learning · Real Estate · 2024
+    </div>
+
+    <h1 class="hero-headline">
+      <span class="text-base">Predict the</span><br/>
+      <span class="text-blue">True Market</span><br/>
+      <span class="text-teal">Value Instantly</span>
+    </h1>
+
+    <p class="hero-desc">
+      Enterprise-grade property valuation powered by a
+      HistGradientBoosting &amp; Ridge Regression ensemble with
+      <strong>R² = 0.92</strong> on 82,000+ samples and
+      25+ engineered features.
+    </p>
+
+    <div class="hero-actions">
+      <button class="btn-primary" data-scroll="predictor-section">
+        Get Estimate →
+      </button>
+      <button class="btn-secondary" data-scroll="about-section">
+        How it works
+      </button>
+    </div>
+
+    <!-- Stat bar -->
+    <div class="stat-bar reveal d1" role="list" aria-label="Model performance metrics">
+      <div class="stat-item" role="listitem">
+        <span class="stat-val">0.924</span>
+        <span class="stat-lbl">R² Score</span>
+      </div>
+      <div class="stat-divider" aria-hidden="true"></div>
+      <div class="stat-item" role="listitem">
+        <span class="stat-val" id="live-rmse">$47K</span>
+        <span class="stat-lbl">RMSE</span>
+      </div>
+      <div class="stat-divider" aria-hidden="true"></div>
+      <div class="stat-item" role="listitem">
+        <span class="stat-val">82K+</span>
+        <span class="stat-lbl">Samples</span>
+      </div>
+      <div class="stat-divider" aria-hidden="true"></div>
+      <div class="stat-item" role="listitem">
+        <span class="stat-val">39</span>
+        <span class="stat-lbl">Features</span>
+      </div>
+      <div class="stat-divider" aria-hidden="true"></div>
+      <div class="stat-item" role="listitem">
+        <span class="stat-val">−18%</span>
+        <span class="stat-lbl">RMSE vs Baseline</span>
+      </div>
+    </div>
+
+  </section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PREDICTOR
+════════════════════════════════════════════════════════════ -->
+  <section id="predictor-section" style="padding-top:0; padding-bottom: 80px;">
+
+    <div class="reveal" style="margin-bottom:var(--space-8);">
+      <p class="section-eyebrow">🔮 AI Predictor</p>
+      <h2 class="section-title">
+        Property <span class="acc">Valuation Tool</span>
+      </h2>
+      <p class="section-desc">Enter property specifications below to receive an instant AI-powered market valuation with confidence range.</p>
+    </div>
+
+    <div class="predictor-wrap">
+
+      <!-- FORM -->
+      <div class="card card-tilt reveal-3d" id="form-card">
+        <div class="card-shine" aria-hidden="true"></div>
+        <div class="card-header">
+          <div class="card-icon-wrap" aria-hidden="true">📋</div>
+          <div>
+            <p class="card-head-title">Property Details</p>
+            <p class="card-head-sub">Required fields marked with *</p>
+          </div>
+        </div>
+
+        <form class="form-body" id="prediction-form" novalidate autocomplete="off">
+          <div class="form-cols">
+
+            <!-- Core -->
+            <div class="form-section-head">Core Specifications</div>
+
+            <div class="form-field">
+              <label class="field-label" for="sqft">Square Footage <span class="req">*</span></label>
+              <div class="input-shell">
+                <span class="input-prefix" aria-hidden="true">📐</span>
+                <input class="input-base" type="number" id="sqft" placeholder="e.g. 2,400"
+                       min="200" max="15000" required aria-required="true"/>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label" for="lot_size">Lot Size (sqft)</label>
+              <div class="input-shell">
+                <span class="input-prefix" aria-hidden="true">🌿</span>
+                <input class="input-base" type="number" id="lot_size" placeholder="7,500" value="7500"/>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label" for="bedrooms">Bedrooms <span class="req">*</span></label>
+              <div class="input-shell">
+                <span class="input-prefix" aria-hidden="true">🛏</span>
+                <input class="input-base" type="number" id="bedrooms" placeholder="3"
+                       min="1" max="10" required aria-required="true"/>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label" for="bathrooms">Bathrooms <span class="req">*</span></label>
+              <div class="input-shell">
+                <span class="input-prefix" aria-hidden="true">🚿</span>
+                <input class="input-base" type="number" id="bathrooms" placeholder="2"
+                       min="1" max="8" required aria-required="true"/>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label" for="year_built">Year Built <span class="req">*</span></label>
+              <div class="input-shell">
+                <span class="input-prefix" aria-hidden="true">🗓</span>
+                <input class="input-base" type="number" id="year_built" placeholder="1998"
+                       min="1800" max="2024" required aria-required="true"/>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label" for="floors">Floors</label>
+              <div class="input-shell">
+                <span class="input-prefix" aria-hidden="true">🏢</span>
+                <select class="select-base" id="floors" aria-label="Number of floors">
+                  <option value="1">1 Floor</option>
+                  <option value="2" selected>2 Floors</option>
+                  <option value="3">3 Floors</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Location -->
+            <div class="form-section-head">Location &amp; Market</div>
+
+            <div class="form-field">
+              <label class="field-label" for="neighborhood">Neighborhood</label>
+              <div class="input-shell">
+                <span class="input-prefix" aria-hidden="true">📍</span>
+                <select class="select-base" id="neighborhood" aria-label="Neighborhood type">
+                  <option value="Luxury Hills">Luxury Hills</option>
+                  <option value="Waterfront">Waterfront</option>
+                  <option value="Tech District">Tech District</option>
+                  <option value="Downtown">Downtown</option>
+                  <option value="Midtown">Midtown</option>
+                  <option value="University">University</option>
+                  <option value="Old Town">Old Town</option>
+                  <option value="Suburbs" selected>Suburbs</option>
+                  <option value="Industrial">Industrial</option>
+                  <option value="Rural">Rural</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label" for="condition">Property Condition</label>
+              <div class="input-shell">
+                <span class="input-prefix" aria-hidden="true">⭐</span>
+                <select class="select-base" id="condition">
+                  <option value="Poor">Poor</option>
+                  <option value="Fair">Fair</option>
+                  <option value="Good" selected>Good</option>
+                  <option value="Excellent">Excellent</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-field" style="grid-column:1/-1">
+              <label class="field-label" for="distance_downtown">Distance to Downtown</label>
+              <div class="slider-wrap">
+                <input type="range" id="distance_downtown" min="0.5" max="40" step="0.5" value="8" aria-valuemin="0.5" aria-valuemax="40"/>
+                <div class="slider-row">
+                  <span class="slider-min-max">0.5 mi</span>
+                  <span class="slider-cur" id="distance_display">8.0 mi</span>
+                  <span class="slider-min-max">40 mi</span>
+                </div>
+              </div>
+              <input type="hidden" id="lat" value="41.86"/>
+              <input type="hidden" id="lon" value="-87.97"/>
+            </div>
+
+            <!-- Quality -->
+            <div class="form-section-head">Quality Indicators</div>
+
+            <div class="form-field" style="grid-column:1/-1">
+              <label class="field-label" for="school_rating">School Rating</label>
+              <div class="slider-wrap">
+                <input type="range" id="school_rating" min="1" max="10" step="0.1" value="6.5"/>
+                <div class="slider-row">
+                  <span class="slider-min-max">1.0 (low)</span>
+                  <span class="slider-cur" id="school_display">6.5</span>
+                  <span class="slider-min-max">10.0 (top)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-field" style="grid-column:1/-1">
+              <label class="field-label" for="crime_rate">Crime Rate Index</label>
+              <div class="slider-wrap">
+                <input type="range" id="crime_rate" min="0.1" max="20" step="0.1" value="3"/>
+                <div class="slider-row">
+                  <span class="slider-min-max">0.1 (safe)</span>
+                  <span class="slider-cur" id="crime_display">3.0</span>
+                  <span class="slider-min-max">20 (high)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Amenities -->
+            <div class="form-section-head">Amenities</div>
+
+            <div class="form-field">
+              <label class="field-label">Swimming Pool</label>
+              <input type="hidden" id="has_pool_val" value="0"/>
+              <div class="toggle-row">
+                <button type="button" class="tog-btn on" data-tog="has_pool" data-val="0">✕ None</button>
+                <button type="button" class="tog-btn" data-tog="has_pool" data-val="1">✓ Yes</button>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label">Basement</label>
+              <input type="hidden" id="has_basement_val" value="0"/>
+              <div class="toggle-row">
+                <button type="button" class="tog-btn on" data-tog="has_basement" data-val="0">✕ None</button>
+                <button type="button" class="tog-btn" data-tog="has_basement" data-val="1">✓ Yes</button>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label">Renovated</label>
+              <input type="hidden" id="renovated_val" value="0"/>
+              <div class="toggle-row">
+                <button type="button" class="tog-btn on" data-tog="renovated" data-val="0">✕ No</button>
+                <button type="button" class="tog-btn" data-tog="renovated" data-val="1">✓ Yes</button>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label" for="garage_spaces">Garage</label>
+              <div class="input-shell">
+                <span class="input-prefix" aria-hidden="true">🚗</span>
+                <select class="select-base" id="garage_spaces">
+                  <option value="0">No Garage</option>
+                  <option value="1" selected>1-Car</option>
+                  <option value="2">2-Car</option>
+                  <option value="3">3-Car</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Financials -->
+            <div class="form-section-head">Financials</div>
+
+            <div class="form-field" style="grid-column:1/-1">
+              <label class="field-label" for="hoa_fee">Monthly HOA Fee</label>
+              <div class="slider-wrap">
+                <input type="range" id="hoa_fee" min="0" max="1500" step="10" value="200"/>
+                <div class="slider-row">
+                  <span class="slider-min-max">$0</span>
+                  <span class="slider-cur" id="hoa_display">$200</span>
+                  <span class="slider-min-max">$1,500</span>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /form-cols -->
+
+          <button type="submit" class="btn-predict-main" id="btn-predict" aria-label="Submit property details for AI price estimation">
+            <div class="spinner" aria-hidden="true"></div>
+            <span class="btn-txt">Generate Estimate</span>
+            <span style="opacity:0.7;font-size:0.8rem;">→</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="sidebar-col">
+
+        <!-- Result card -->
+        <div class="card card-tilt reveal-3d d1" id="result-card" style="position:relative;">
+          <div class="card-shine" aria-hidden="true"></div>
+          <div class="card-header">
+            <div class="card-icon-wrap" aria-hidden="true">💰</div>
+            <div>
+              <p class="card-head-title">Valuation Result</p>
+              <p class="card-head-sub">AI ensemble estimate</p>
+            </div>
+          </div>
+
+          <div class="result-body">
+
+            <div class="err-banner" id="err-banner" role="alert">
+              <span>⚠</span><span id="err-text">An error occurred.</span>
+            </div>
+
+            <div class="empty-state" id="empty-state">
+              <div class="empty-house" aria-hidden="true">🏡</div>
+              <h3>Awaiting Input</h3>
+              <p>Complete the property form to generate a valuation.</p>
+            </div>
+
+            <div class="price-reveal" id="price-reveal" aria-live="polite">
+              <p class="price-eyebrow">Estimated Market Value</p>
+              <p class="price-main" id="price-main">$0</p>
+              <p class="price-range" id="price-range-txt"></p>
+            </div>
+
+            <div class="breakdown" id="breakdown" aria-label="Property breakdown">
+              <p class="breakdown-lbl">Property Summary</p>
+              <div class="bd-grid">
+                <div class="bd-cell"><p class="bd-k">Floor Area</p><p class="bd-v" id="bd-sqft">—</p></div>
+                <div class="bd-cell"><p class="bd-k">Bed / Bath</p><p class="bd-v" id="bd-beds">—</p></div>
+                <div class="bd-cell"><p class="bd-k">Location</p><p class="bd-v" id="bd-nbhd">—</p></div>
+                <div class="bd-cell"><p class="bd-k">Price / sqft</p><p class="bd-v" id="bd-ppsq">—</p></div>
+                <div class="bd-cell"><p class="bd-k">Condition</p><p class="bd-v" id="bd-cond">—</p></div>
+                <div class="bd-cell"><p class="bd-k">Year Built</p><p class="bd-v" id="bd-year">—</p></div>
+              </div>
+            </div>
+
+            <div class="feat-bars" id="feat-bars-wrap" aria-label="Feature importance">
+              <p class="feat-bars-lbl">Model Feature Weights</p>
+              <div id="feat-bars-inner"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Model spec card -->
+        <div class="card card-tilt reveal-3d d2" style="position:relative;">
+          <div class="card-shine" aria-hidden="true"></div>
+          <div class="card-header">
+            <div class="card-icon-wrap" aria-hidden="true">⚙️</div>
+            <div>
+              <p class="card-head-title">Model Specification</p>
+              <p class="card-head-sub">Ensemble architecture</p>
+            </div>
+          </div>
+
+          <div class="spec-list" role="list">
+            <div class="spec-row" role="listitem">
+              <span class="spec-k">Primary model</span>
+              <span class="spec-v blue">HistGBM</span>
+            </div>
+            <div class="spec-row" role="listitem">
+              <span class="spec-k">Secondary model</span>
+              <span class="spec-v violet">Ridge (α=10)</span>
+            </div>
+            <div class="spec-row" role="listitem">
+              <span class="spec-k">Weights</span>
+              <span class="spec-v">82% / 18%</span>
+            </div>
+            <div class="spec-row" role="listitem">
+              <span class="spec-k">Target variable</span>
+              <span class="spec-v teal">log(price)</span>
+            </div>
+            <div class="spec-row" role="listitem">
+              <span class="spec-k">Max iterations</span>
+              <span class="spec-v">300</span>
+            </div>
+            <div class="spec-row" role="listitem">
+              <span class="spec-k">Training samples</span>
+              <span class="spec-v warn">82,000</span>
+            </div>
+            <div class="spec-row" role="listitem">
+              <span class="spec-k">Feature count</span>
+              <span class="spec-v">39 features</span>
+            </div>
+          </div>
+
+          <div class="confidence-bar-wrap">
+            <div class="conf-label">
+              <span class="conf-key">Prediction confidence band</span>
+              <span class="conf-val">± 8%</span>
+            </div>
+            <div class="conf-track" role="progressbar" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100">
+              <div class="conf-fill"></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /sidebar-col -->
+    </div><!-- /predictor-wrap -->
+  </section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     METHODOLOGY
+════════════════════════════════════════════════════════════ -->
+  <section id="about-section">
+    <div class="reveal">
+      <p class="section-eyebrow">📖 Methodology</p>
+      <h2 class="section-title">Engineering <span class="acc">Excellence</span></h2>
+      <p class="section-desc">A rigorous end-to-end ML pipeline from raw data to production-ready API.</p>
+    </div>
+
+    <div class="cards-grid">
+
+      <div class="card info-card card-tilt reveal d1" style="position:relative;">
+        <div class="card-shine" aria-hidden="true"></div>
+        <p class="info-card-num">01</p>
+        <span class="info-card-icon">🔬</span>
+        <h3>Data Generation</h3>
+        <p>82,000 synthetic property records generated with statistically realistic distributions for prices, neighborhoods, geospatial coordinates, and amenities.</p>
+        <div class="tag-row">
+          <span class="tag tag-b">82K records</span>
+          <span class="tag tag-v">NumPy</span>
+          <span class="tag tag-t">Pandas</span>
+        </div>
+      </div>
+
+      <div class="card info-card card-tilt reveal d2" style="position:relative;">
+        <div class="card-shine" aria-hidden="true"></div>
+        <p class="info-card-num">02</p>
+        <span class="info-card-icon">⚗️</span>
+        <h3>Feature Engineering</h3>
+        <p>25+ features crafted using log-transforms, interaction terms (sqft × tier), geospatial clustering, amenity scores, and polynomial expansions to capture non-linearity.</p>
+        <div class="tag-row">
+          <span class="tag tag-b">log(sqft)</span>
+          <span class="tag tag-v">tier × sqft</span>
+          <span class="tag tag-t">geo median</span>
+          <span class="tag tag-w">sqft²</span>
+        </div>
+      </div>
+
+      <div class="card info-card card-tilt reveal d3" style="position:relative;">
+        <div class="card-shine" aria-hidden="true"></div>
+        <p class="info-card-num">03</p>
+        <span class="info-card-icon">🧠</span>
+        <h3>Ensemble Modelling</h3>
+        <p>Weighted VotingRegressor combining HistGradientBoosting (82%) and Ridge Regression (18%), trained on log-price with 80/20 train-test split and StandardScaler.</p>
+        <div class="tag-row">
+          <span class="tag tag-b">R² = 0.924</span>
+          <span class="tag tag-v">HistGBM</span>
+          <span class="tag tag-t">Ridge α=10</span>
+        </div>
+      </div>
+
+      <div class="card info-card card-tilt reveal d4" style="position:relative;">
+        <div class="card-shine" aria-hidden="true"></div>
+        <p class="info-card-num">04</p>
+        <span class="info-card-icon">🚀</span>
+        <h3>API Deployment</h3>
+        <p>Flask REST API with JSON endpoints for real-time predictions, model metadata, and health monitoring. Production-ready with Gunicorn WSGI and Heroku hosting.</p>
+        <div class="tag-row">
+          <span class="tag tag-b">Flask</span>
+          <span class="tag tag-v">Gunicorn</span>
+          <span class="tag tag-t">Heroku</span>
+          <span class="tag tag-w">REST API</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TECH STACK
+════════════════════════════════════════════════════════════ -->
+  <section id="stack-section" style="padding-bottom:var(--space-20);">
+    <div class="reveal">
+      <p class="section-eyebrow">🛠 Technology</p>
+      <h2 class="section-title">Built With <span class="acc">Best-in-Class</span> Tools</h2>
+    </div>
+
+    <div class="cards-grid" style="grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); margin-top:var(--space-8);">
+
+      <div class="card reveal d1" style="padding:var(--space-5) var(--space-6);">
+        <p style="font-size:1.5rem;margin-bottom:var(--space-3);">🐍</p>
+        <p style="font-weight:700;font-size:0.92rem;margin-bottom:4px;">Python 3.14</p>
+        <p style="font-size:0.78rem;color:var(--c-text-muted);">Core runtime · Data pipeline · API server</p>
+      </div>
+
+      <div class="card reveal d2" style="padding:var(--space-5) var(--space-6);">
+        <p style="font-size:1.5rem;margin-bottom:var(--space-3);">🤖</p>
+        <p style="font-weight:700;font-size:0.92rem;margin-bottom:4px;">Scikit-learn</p>
+        <p style="font-size:0.78rem;color:var(--c-text-muted);">HistGBM · Ridge · StandardScaler · Metrics</p>
+      </div>
+
+      <div class="card reveal d3" style="padding:var(--space-5) var(--space-6);">
+        <p style="font-size:1.5rem;margin-bottom:var(--space-3);">⚗️</p>
+        <p style="font-weight:700;font-size:0.92rem;margin-bottom:4px;">Flask + CORS</p>
+        <p style="font-size:0.78rem;color:var(--c-text-muted);">REST API · JSON endpoints · Template rendering</p>
+      </div>
+
+      <div class="card reveal d4" style="padding:var(--space-5) var(--space-6);">
+        <p style="font-size:1.5rem;margin-bottom:var(--space-3);">☁️</p>
+        <p style="font-weight:700;font-size:0.92rem;margin-bottom:4px;">Heroku + Gunicorn</p>
+        <p style="font-size:0.78rem;color:var(--c-text-muted);">Production WSGI · Cloud deployment · Scaling</p>
+      </div>
+
+      <div class="card reveal d1" style="padding:var(--space-5) var(--space-6);">
+        <p style="font-size:1.5rem;margin-bottom:var(--space-3);">📊</p>
+        <p style="font-weight:700;font-size:0.92rem;margin-bottom:4px;">NumPy · Pandas</p>
+        <p style="font-size:0.78rem;color:var(--c-text-muted);">Data wrangling · Feature transforms · Vectorised ops</p>
+      </div>
+
+      <div class="card reveal d2" style="padding:var(--space-5) var(--space-6);">
+        <p style="font-size:1.5rem;margin-bottom:var(--space-3);">💾</p>
+        <p style="font-weight:700;font-size:0.92rem;margin-bottom:4px;">Joblib</p>
+        <p style="font-size:0.78rem;color:var(--c-text-muted);">Model serialisation · Scaler persistence · Fast load</p>
+      </div>
+
+    </div>
+  </section>
+
+</div><!-- /page-wrap -->
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════════════ -->
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-left">
+    <span class="footer-brand">HouseAI</span>
+    <span class="footer-copy">
+      · HistGBM + Ridge · 82K samples · R² 0.924 · © 2024
+    </span>
+  </div>
+  <nav class="footer-right" aria-label="Footer links">
+    <a class="footer-link" href="/health">API Status</a>
+    <a class="footer-link" href="/api/metadata">Model Metadata</a>
+    <a class="footer-link" href="https://heroku.com" target="_blank" rel="noopener">Heroku</a>
+  </nav>
+</footer>
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>

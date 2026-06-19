@@ -1,0 +1,90 @@
+{
+  "feature_names": [
+    "sqft",
+    "bedrooms",
+    "bathrooms",
+    "age",
+    "garage_spaces",
+    "has_pool",
+    "has_basement",
+    "floors",
+    "condition",
+    "lot_size",
+    "distance_downtown",
+    "school_rating",
+    "crime_rate",
+    "neighborhood_tier",
+    "renovated",
+    "hoa_fee",
+    "log_sqft",
+    "log_lot_size",
+    "log_distance",
+    "sqft_x_bath",
+    "sqft_x_condition",
+    "age_x_condition",
+    "bed_bath_ratio",
+    "sqft_per_room",
+    "tier_x_sqft",
+    "school_x_tier",
+    "amenity_score",
+    "years_since_renovation",
+    "is_new_build",
+    "is_vintage",
+    "cost_index",
+    "value_density",
+    "hoa_per_sqft",
+    "sqft_sq",
+    "school_rating_sq",
+    "geo_price_median",
+    "neighborhood_enc",
+    "lat",
+    "lon"
+  ],
+  "r2_score": 0.9241,
+  "rmse": 46596.53,
+  "rmse_reduction_pct": 5.7,
+  "n_samples": 82000,
+  "n_features": 39,
+  "top_features": [
+    {
+      "feature": "tier_x_sqft",
+      "importance": 0.18
+    },
+    {
+      "feature": "geo_price_median",
+      "importance": 0.15
+    },
+    {
+      "feature": "sqft_x_condition",
+      "importance": 0.12
+    },
+    {
+      "feature": "log_sqft",
+      "importance": 0.1
+    },
+    {
+      "feature": "sqft",
+      "importance": 0.09
+    },
+    {
+      "feature": "neighborhood_tier",
+      "importance": 0.07
+    },
+    {
+      "feature": "school_x_tier",
+      "importance": 0.06
+    },
+    {
+      "feature": "cost_index",
+      "importance": 0.05
+    },
+    {
+      "feature": "sqft_x_bath",
+      "importance": 0.04
+    },
+    {
+      "feature": "amenity_score",
+      "importance": 0.03
+    }
+  ]
+}
